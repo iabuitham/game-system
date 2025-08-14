@@ -1,4 +1,4 @@
-# Game Announcer — Premium UI/UX
+# Game Announcer 
 
 This is a premium, event-ready version of the Game Announcer app (operator + announcement screens) with upgraded UI/UX:
 - Tailwind CSS for modern responsive UI
