@@ -1,0 +1,1070 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Announcement Screen</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/gsap@3.12.2/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+    
+    * { font-family: 'Inter', system-ui, sans-serif; }
+    
+    /* Portrait orientation - rotate entire screen */
+    #screen {
+      transform: rotate(90deg);
+      transform-origin: center center;
+      width: 100vh;
+      height: 100vw;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      margin-top: -50vw;
+      margin-left: -50vh;
+    }
+    
+    /* Glassmorphism effects */
+    .glass {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .glass-dark {
+      background: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Gradient animations */
+    .gradient-bg {
+      background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #f5576c);
+      background-size: 400% 400%;
+      animation: gradientShift 8s ease infinite;
+    }
+    
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    
+    /* Media display improvements */
+    .media-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .media-element {
+      max-width: 95%;
+      max-height: 95%;
+      object-fit: contain;
+      border-radius: 16px;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+      transition: all 0.5s ease;
+    }
+    
+    .media-element:hover {
+      transform: scale(1.02);
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.7);
+    }
+    
+    /* Prize reveal enhancements */
+    .prize-card {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+      backdrop-filter: blur(30px);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+    }
+    
+    /* Floating particles background */
+    .particles {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    
+    .particle {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.6);
+      border-radius: 50%;
+      animation: float 8s infinite linear;
+    }
+    
+    @keyframes float {
+      0% {
+        transform: translateY(100vh) rotate(0deg);
+        opacity: 0;
+      }
+      10% {
+        opacity: 1;
+      }
+      90% {
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(-100px) rotate(360deg);
+        opacity: 0;
+      }
+    }
+    
+    /* Status indicators */
+    .status-pulse {
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+    
+    /* Smooth transitions */
+    .fade-transition {
+      transition: opacity 0.8s ease-in-out, transform 0.8s ease-in-out;
+    }
+    
+    /* Loading spinner */
+    .spinner {
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-top: 3px solid #ffffff;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body class="bg-black min-h-screen text-white overflow-hidden">
+  <!-- Login Screen -->
+  <div id="loginWrap" class="absolute inset-0 flex items-center justify-center gradient-bg">
+    <div class="particles" id="loginParticles"></div>
+    <div class="glass p-8 rounded-3xl backdrop-blur-md z-10 transform hover:scale-105 transition-transform duration-300">
+      <div class="text-center mb-6">
+        <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-purple-400 to-pink-400 flex items-center justify-center">
+          <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+          </svg>
+        </div>
+        <h2 class="text-3xl font-bold mb-2">Announcement Screen</h2>
+        <p class="text-sm opacity-80">Enter your screen credentials to begin</p>
+      </div>
+      
+      <div class="space-y-4">
+        <div class="relative">
+          <input id="deviceId" class="block w-80 p-4 rounded-xl bg-white/10 border border-white/20 focus:border-white/40 focus:ring-2 focus:ring-purple-400 transition-all duration-300" placeholder="Device ID (e.g., SC-1)">
+          <div class="absolute inset-y-0 right-0 flex items-center pr-4">
+            <svg class="w-5 h-5 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+            </svg>
+          </div>
+        </div>
+        
+        <div class="relative">
+          <input id="deviceSecret" type="password" class="block w-80 p-4 rounded-xl bg-white/10 border border-white/20 focus:border-white/40 focus:ring-2 focus:ring-purple-400 transition-all duration-300" placeholder="Device Secret">
+          <div class="absolute inset-y-0 right-0 flex items-center pr-4">
+            <svg class="w-5 h-5 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+            </svg>
+          </div>
+        </div>
+        
+        <div class="flex gap-3">
+          <button id="loginBtn" class="flex-1 px-6 py-4 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold transform hover:scale-105 transition-all duration-300 shadow-lg">
+            <span id="loginText">Connect</span>
+            <div id="loginSpinner" class="spinner mx-auto hidden"></div>
+          </button>
+          <button id="qrHint" class="px-6 py-4 rounded-xl bg-white/10 hover:bg-white/20 text-white font-medium transition-all duration-300">
+            Quick Login
+          </button>
+        </div>
+        
+        <div id="loginError" class="text-red-300 text-center text-sm min-h-[20px]"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Screen -->
+  <div id="screen" class="w-full h-screen relative hidden">
+    <!-- Background Particles -->
+    <div class="particles" id="backgroundParticles"></div>
+    
+    <!-- Advertisement Media Loop -->
+    <div id="adArea" class="absolute inset-0 z-10 media-container">
+      <video id="adVideo" class="media-element hidden" autoplay muted loop playsinline preload="auto"></video>
+      <img id="adImage" class="media-element hidden" />
+      <div class="absolute top-4 right-4 glass-dark px-4 py-2 rounded-full">
+        <div class="flex items-center gap-2">
+          <div class="w-2 h-2 bg-green-400 rounded-full status-pulse"></div>
+          <span class="text-sm font-medium">Live</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pricing Sheet Display -->
+    <div id="pricingArea" class="absolute inset-0 z-20 bg-gradient-to-br from-slate-900 via-blue-900 to-purple-900 media-container fade-transition" style="display:none; opacity:0;">
+      <img id="pricingImage" class="media-element hidden" />
+      <video id="pricingVideo" class="media-element hidden" autoplay muted loop playsinline preload="auto"></video>
+      <div class="absolute top-4 left-4 glass-dark px-6 py-3 rounded-full">
+        <div class="flex items-center gap-3">
+          <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+          <span class="text-lg font-semibold">Pricing Information</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Game Status Overlay -->
+    <div id="gameOverlay" class="absolute inset-0 z-30 bg-gradient-to-br from-purple-900/90 via-blue-900/90 to-indigo-900/90 flex items-center justify-center fade-transition" style="display:none; opacity:0;">
+      <div class="particles" id="gameParticles"></div>
+      <div id="badge" class="text-center z-10">
+        <div class="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 flex items-center justify-center animate-bounce">
+          <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+          </svg>
+        </div>
+        <div id="statusText" class="text-7xl font-black tracking-tight drop-shadow-2xl bg-gradient-to-r from-yellow-300 to-orange-400 bg-clip-text text-transparent">
+          Game in Progress
+        </div>
+        <div class="mt-4 text-xl opacity-80 font-light">
+          🎮 Get ready for amazing prizes!
+        </div>
+      </div>
+    </div>
+
+    <!-- Prize Reveal -->
+    <div id="prizeReveal" class="absolute inset-0 z-40 bg-gradient-to-br from-purple-900/95 via-pink-900/95 to-red-900/95 flex flex-col items-center justify-center fade-transition" style="display:none; opacity:0;">
+      <div class="particles" id="prizeParticles"></div>
+      
+      <!-- Winner announcement banner -->
+      <div id="winnerBanner" class="absolute top-8 left-1/2 transform -translate-x-1/2 glass px-8 py-4 rounded-full">
+        <div class="flex items-center gap-3">
+          <div class="w-3 h-3 bg-yellow-400 rounded-full animate-ping"></div>
+          <span class="text-2xl font-bold tracking-wide">🎉 WINNER ANNOUNCEMENT 🎉</span>
+          <div class="w-3 h-3 bg-yellow-400 rounded-full animate-ping"></div>
+        </div>
+      </div>
+      
+      <div id="prizeCard" class="prize-card p-8 rounded-3xl text-center max-w-4xl mx-4 transform hover:scale-105 transition-all duration-500">
+        <div class="relative mb-6">
+          <img id="prizeImg" class="mx-auto w-96 h-64 object-cover rounded-2xl shadow-2xl" />
+          <div class="absolute -top-4 -right-4 w-16 h-16 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center transform rotate-12">
+            <span class="text-2xl">🏆</span>
+          </div>
+        </div>
+        
+        <h1 id="prizeTitle" class="text-6xl font-black mb-4 bg-gradient-to-r from-yellow-300 via-orange-400 to-red-400 bg-clip-text text-transparent drop-shadow-lg"></h1>
+        <p id="prizeDesc" class="text-2xl opacity-90 font-light leading-relaxed"></p>
+        
+        <div class="mt-8 flex items-center justify-center gap-4">
+          <div class="flex items-center gap-2 glass-dark px-4 py-2 rounded-full">
+            <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+            <span class="text-sm font-medium">LIVE</span>
+          </div>
+          <div class="text-4xl animate-bounce">🎊</div>
+          <div class="flex items-center gap-2 glass-dark px-4 py-2 rounded-full">
+            <span class="text-sm font-medium">CONGRATULATIONS!</span>
+            <div class="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Connection Status Indicator -->
+    <div id="connectionStatus" class="absolute bottom-4 right-4 z-50 glass-dark px-4 py-2 rounded-full">
+      <div class="flex items-center gap-2">
+        <div id="connectionDot" class="w-2 h-2 bg-gray-400 rounded-full"></div>
+        <span id="connectionText" class="text-sm font-medium">Connecting...</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audio Elements -->
+  <audio id="celebrate" src="/media/celebrate.mp3" preload="auto"></audio>
+  <audio id="gameStart" src="/media/game-start.mp3" preload="auto"></audio>
+  <audio id="transition" src="/media/transition.mp3" preload="auto"></audio>
+
+
+  <script>
+    // Shared functions (inline to avoid loading issues)
+    async function deviceLogin(deviceId, deviceSecret) {
+      const res = await fetch("/api/auth/device", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ deviceId, deviceSecret })
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(()=>({error:"unknown"}));
+        throw new Error(err.error || "auth_failed");
+      }
+      const data = await res.json();
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("device", JSON.stringify(data.device));
+      return data;
+    }
+
+    function getToken() {
+      return localStorage.getItem("token");
+    }
+
+    // Main application
+    const loginWrap = document.getElementById('loginWrap');
+    const loginBtn = document.getElementById('loginBtn');
+    const loginText = document.getElementById('loginText');
+    const loginSpinner = document.getElementById('loginSpinner');
+    const deviceIdInput = document.getElementById('deviceId');
+    const deviceSecretInput = document.getElementById('deviceSecret');
+    const loginError = document.getElementById('loginError');
+    const screen = document.getElementById('screen');
+    
+    // Media elements
+    const adArea = document.getElementById('adArea');
+    const adVideo = document.getElementById('adVideo');
+    const adImage = document.getElementById('adImage');
+    const pricingArea = document.getElementById('pricingArea');
+    const pricingImage = document.getElementById('pricingImage');
+    const pricingVideo = document.getElementById('pricingVideo');
+    
+    // Game elements
+    const gameOverlay = document.getElementById('gameOverlay');
+    const prizeReveal = document.getElementById('prizeReveal');
+    const prizeImg = document.getElementById('prizeImg');
+    const prizeTitle = document.getElementById('prizeTitle');
+    const prizeDesc = document.getElementById('prizeDesc');
+    
+    // Audio elements
+    const celebrate = document.getElementById('celebrate');
+    const gameStart = document.getElementById('gameStart');
+    const transition = document.getElementById('transition');
+    
+    // Connection status
+    const connectionDot = document.getElementById('connectionDot');
+    const connectionText = document.getElementById('connectionText');
+
+    let socket, device;
+    let adMedia = [], adIndex = 0, adTimer;
+    let pricingMedia = null;
+    let currentState = 'idle'; // 'idle', 'pricing', 'game', 'prize'
+    let isPageVisible = true; // Track page visibility
+    let reconnectAttempts = 0;
+    let maxReconnectAttempts = 5;
+
+    // Particle system
+    function createParticles(container, count = 50) {
+      container.innerHTML = '';
+      for (let i = 0; i < count; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.animationDelay = Math.random() * 8 + 's';
+        particle.style.animationDuration = (Math.random() * 4 + 6) + 's';
+        container.appendChild(particle);
+      }
+    }
+
+    // Initialize login screen particles
+    createParticles(document.getElementById('loginParticles'), 30);
+
+    // Enhanced login process
+    loginBtn.onclick = async () => {
+      loginError.textContent = '';
+      loginText.style.display = 'none';
+      loginSpinner.classList.remove('hidden');
+      loginBtn.disabled = true;
+      
+      try {
+        const data = await deviceLogin(deviceIdInput.value.trim(), deviceSecretInput.value.trim());
+        device = data.device;
+        
+        if (device.role !== 'screen') {
+          throw new Error('This device is not configured as a screen');
+        }
+        
+        // Success animation
+        gsap.to(loginWrap, {
+          scale: 1.1,
+          opacity: 0,
+          duration: 0.8,
+          ease: "power2.inOut",
+          onComplete: () => {
+            hideLoginForm();
+            initSocket();
+            loadGameMedia().then(() => {
+              startAdLoop();
+              updateConnectionStatus('connected');
+            });
+          }
+        });
+        
+      } catch (e) {
+        loginError.textContent = e.message;
+        loginText.style.display = 'inline';
+        loginSpinner.classList.add('hidden');
+        loginBtn.disabled = false;
+        
+        // Error shake animation
+        gsap.to(loginError, {
+          x: [-10, 10, -10, 10, 0],
+          duration: 0.5,
+          ease: "power2.inOut"
+        });
+      }
+    };
+
+    // Enhanced connection status updates
+    function updateConnectionStatus(status) {
+      const statusMap = {
+        'connecting': { color: 'bg-yellow-400', text: 'Connecting...' },
+        'connected': { color: 'bg-green-400', text: 'Connected' },
+        'disconnected': { color: 'bg-yellow-500', text: 'Reconnecting...' },
+        'error': { color: 'bg-red-500', text: 'Connection Error' },
+        'reconnecting': { color: 'bg-blue-400', text: 'Reconnecting...' }
+      };
+      
+      const config = statusMap[status] || statusMap['error'];
+      connectionDot.className = `w-2 h-2 ${config.color} rounded-full ${status === 'connected' ? 'status-pulse' : ''}`;
+      connectionText.textContent = config.text;
+    }
+
+    function showLoginForm() {
+      loginWrap.style.display = 'flex';
+      screen.classList.add('hidden');
+      gsap.fromTo(loginWrap, { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.6, ease: "back.out(1.7)" });
+    }
+
+    function hideLoginForm() {
+      loginWrap.style.display = 'none';
+      screen.classList.remove('hidden');
+      gsap.fromTo(screen, { opacity: 0 }, { opacity: 1, duration: 0.8 });
+    }
+
+    async function loadGameMedia(){
+      try {
+        updateConnectionStatus('connecting');
+        const res = await fetch(`/api/games/${device.gameId}/media`, {
+          headers: { Authorization: 'Bearer ' + getToken() }
+        });
+        
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+        
+        const media = await res.json();
+        console.log('Loaded game media:', media);
+        
+        // Separate advertisement and pricing media
+        adMedia = media.filter(m => m.type === 'advertisement');
+        const pricing = media.find(m => m.type === 'pricing');
+        pricingMedia = pricing || null;
+        
+        // Fallback media if none exists
+        if (adMedia.length === 0) {
+          console.log('No advertisement media found, using fallback');
+          adMedia = [
+            {media_url: '/media/sample1.jpg', type: 'advertisement', title: 'Welcome'},
+            {media_url: '/media/sample2.mp4', type: 'advertisement', title: 'Promotional Video'}
+          ];
+        }
+        
+        updateConnectionStatus('connected');
+        
+      } catch (e) {
+        console.error('Failed to load game media:', e);
+        updateConnectionStatus('error');
+        
+        // Fallback to default media
+        adMedia = [
+          {media_url: '/media/welcome.mp4', type: 'advertisement', title: 'Welcome'},
+          {media_url: '/media/we.mp4', type: 'advertisement', title: 'Promotional Video'}
+        ];
+      }
+    }
+
+    // Enhanced socket connection with better reconnection handling
+    function initSocket(){
+      updateConnectionStatus('connecting');
+      reconnectAttempts = 0;
+      
+      socket = io({ 
+        auth: { token: getToken() },
+        forceNew: true,
+        timeout: 10000,
+        transports: ['websocket', 'polling']
+      });
+      
+      socket.on('connect', () => {
+        console.log('Socket connected');
+        updateConnectionStatus('connected');
+        reconnectAttempts = 0;
+      });
+      
+      socket.on('disconnect', (reason) => {
+        console.log('Socket disconnected:', reason);
+        updateConnectionStatus('disconnected');
+        
+        // Only attempt reconnection if the disconnect wasn't intentional
+        if (reason === 'io server disconnect') {
+          // Server initiated disconnect, try to reconnect after delay
+          setTimeout(() => {
+            if (reconnectAttempts < maxReconnectAttempts) {
+              console.log(`Attempting to reconnect (${reconnectAttempts + 1}/${maxReconnectAttempts})`);
+              reconnectAttempts++;
+              updateConnectionStatus('reconnecting');
+              socket.connect();
+            } else {
+              updateConnectionStatus('error');
+            }
+          }, 2000);
+        }
+      });
+      
+      socket.on('connect_error', (error) => {
+        console.error('Socket connection error:', error);
+        reconnectAttempts++;
+        
+        if (reconnectAttempts < maxReconnectAttempts) {
+          updateConnectionStatus('reconnecting');
+          setTimeout(() => {
+            console.log(`Retrying connection (${reconnectAttempts}/${maxReconnectAttempts})`);
+            socket.connect();
+          }, 3000);
+        } else {
+          updateConnectionStatus('error');
+        }
+      });
+      
+      socket.on('game_started', (payload) => {
+        console.log('Game started:', payload);
+        showGameInProgress();
+      });
+      
+      socket.on('prize_announced', (payload) => {
+        console.log('Prize announced:', payload);
+        showPrize(payload.prize);
+      });
+      
+      socket.on('round_finished', (payload) => {
+        console.log('Round finished:', payload);
+        endRound();
+      });
+      
+      socket.on('show_pricing_sheet', () => {
+        console.log('Show pricing sheet requested');
+        showPricingSheet();
+      });
+      
+      socket.on('hide_pricing_sheet', () => {
+        console.log('Hide pricing sheet requested');
+        hidePricingSheet();
+      });
+    }
+
+    function startAdLoop(){
+      if(adMedia.length === 0) {
+        console.log('No ad media available for loop');
+        return;
+      }
+      
+      console.log('Starting ad loop with', adMedia.length, 'media items');
+      currentState = 'idle';
+      adIndex = 0;
+      
+      // Show ad area with animation
+      gsap.to(adArea, { opacity: 1, duration: 0.5 });
+      showAdMedia(adMedia[adIndex]);
+      
+      if(adMedia.length > 1){
+        scheduleNextAd();
+      }
+    }
+
+    // Modified to preserve the current position in the loop when page becomes visible
+    function resumeAdLoop(){
+      if(adMedia.length === 0 || currentState !== 'idle') {
+        return;
+      }
+      
+      console.log('Resuming ad loop from current position:', adIndex);
+      
+      // Don't reset the index, just continue from where we were
+      showAdMedia(adMedia[adIndex]);
+      
+      if(adMedia.length > 1){
+        scheduleNextAd();
+      }
+    }
+
+    function scheduleNextAd(){
+      if(adTimer) clearTimeout(adTimer);
+      
+      const currentMedia = adMedia[adIndex];
+      let duration = 8000; // default for images
+      
+      if(currentMedia && currentMedia.media_url && 
+         (currentMedia.media_url.includes('.mp4') || 
+          currentMedia.media_url.includes('.webm') || 
+          currentMedia.media_url.includes('.mov'))){
+        
+        const video = adVideo;
+        if(video.duration && !isNaN(video.duration)){
+          duration = Math.max(video.duration * 1000, 5000);
+          console.log('Using video duration:', duration / 1000, 'seconds');
+        } else {
+          duration = 15000;
+        }
+      }
+      
+      adTimer = setTimeout(() => {
+        if(currentState === 'idle' && adMedia.length > 1 && isPageVisible){
+          const nextIndex = (adIndex + 1) % adMedia.length;
+          
+          // Smooth transition between ads
+          gsap.to([adVideo, adImage], {
+            opacity: 0,
+            scale: 0.95,
+            duration: 0.3,
+            onComplete: () => {
+              adIndex = nextIndex;
+              showAdMedia(adMedia[adIndex]);
+              gsap.to([adVideo, adImage], {
+                opacity: 1,
+                scale: 1,
+                duration: 0.5,
+                ease: "back.out(1.7)"
+              });
+            }
+          });
+          
+          scheduleNextAd();
+        }
+      }, duration);
+    }
+
+    function clearAdLoop(){
+      if(adTimer) clearTimeout(adTimer);
+      adVideo.pause();
+      gsap.to(adArea, { opacity: 0, duration: 0.3 });
+    }
+
+    function showAdMedia(mediaItem){
+      if(!mediaItem || !mediaItem.media_url) {
+        console.log('No media item to show:', mediaItem);
+        return;
+      }
+      
+      console.log('Showing ad media:', mediaItem.media_url);
+      const path = mediaItem.media_url;
+      
+      // Hide both elements first
+      adVideo.classList.add('hidden');
+      adImage.classList.add('hidden');
+      
+      if(path.includes('.mp4') || path.includes('.webm') || path.includes('.mov')){
+        adVideo.src = path;
+        adVideo.classList.remove('hidden');
+        adVideo.currentTime = 0;
+        
+        adVideo.onloadedmetadata = () => {
+          console.log('Video metadata loaded - duration:', adVideo.duration);
+          if(adMedia.length > 1 && currentState === 'idle') {
+            scheduleNextAd();
+          }
+        };
+        
+        adVideo.play().then(() => {
+          console.log('Video playing successfully');
+        }).catch((e) => {
+          console.error('Video play failed:', e);
+          // Fallback to image
+          adVideo.classList.add('hidden');
+          adImage.src = '/media/sample1.jpg';
+          adImage.classList.remove('hidden');
+        });
+      } else {
+        adVideo.pause();
+        adImage.src = path;
+        adImage.classList.remove('hidden');
+        
+        adImage.onerror = () => {
+          console.error('Image failed to load:', path);
+          adImage.src = '/media/sample1.jpg';
+        };
+        adImage.onload = () => console.log('Image loaded successfully:', path);
+      }
+    }
+
+    function showPricingSheet(){
+      if(!pricingMedia) {
+        console.log('No pricing media available');
+        return;
+      }
+      
+      console.log('Showing pricing sheet:', pricingMedia.media_url);
+      currentState = 'pricing';
+      clearAdLoop();
+      
+      // Smooth transition to pricing
+      gsap.to(pricingArea, {
+        display: 'flex',
+        opacity: 1,
+        duration: 0.8,
+        ease: "power2.inOut"
+      });
+      
+      transition.play().catch(() => {});
+      
+      // Hide both elements first
+      pricingVideo.classList.add('hidden');
+      pricingImage.classList.add('hidden');
+      
+      const path = pricingMedia.media_url;
+      if(path.includes('.mp4') || path.includes('.webm') || path.includes('.mov')){
+        pricingVideo.src = path;
+        pricingVideo.classList.remove('hidden');
+        pricingVideo.currentTime = 0;
+        
+        pricingVideo.onloadedmetadata = () => {
+          console.log('Pricing video metadata loaded - duration:', pricingVideo.duration);
+        };
+        
+        pricingVideo.play().then(() => {
+          console.log('Pricing video playing successfully');
+        }).catch((e) => {
+          console.error('Pricing video play failed:', e);
+        });
+      } else {
+        pricingVideo.pause();
+        pricingImage.src = path;
+        pricingImage.classList.remove('hidden');
+        
+        pricingImage.onerror = () => console.error('Pricing image failed to load:', path);
+        pricingImage.onload = () => console.log('Pricing image loaded successfully:', path);
+      }
+    }
+
+    function hidePricingSheet(){
+      console.log('Hiding pricing sheet');
+      currentState = 'idle';
+      
+      // Smooth transition back to ads
+      gsap.to(pricingArea, {
+        opacity: 0,
+        duration: 0.5,
+        ease: "power2.inOut",
+        onComplete: () => {
+          pricingArea.style.display = 'none';
+          pricingVideo.pause();
+          pricingVideo.classList.add('hidden');
+          pricingImage.classList.add('hidden');
+          resumeAdLoop(); // Use resumeAdLoop instead of startAdLoop
+        }
+      });
+      
+      transition.play().catch(() => {});
+    }
+
+    function showGameInProgress(){
+      console.log('Showing game in progress');
+      currentState = 'game';
+      clearAdLoop();
+      
+      // Hide pricing if shown
+      pricingArea.style.display = 'none';
+      pricingArea.style.opacity = '0';
+      
+      // Show game overlay with animation
+      gsap.set(gameOverlay, { display: 'flex', opacity: 0 });
+      gsap.to(gameOverlay, { opacity: 1, duration: 0.8 });
+      
+      // Animate status text
+      gsap.fromTo('#statusText', 
+        { scale: 0.8, opacity: 0, y: 30 }, 
+        { scale: 1, opacity: 1, y: 0, duration: 1.2, ease: 'elastic.out(1,0.6)' }
+      );
+      
+      // Create game particles
+      createParticles(document.getElementById('gameParticles'), 40);
+      
+      gameStart.play().catch(() => {});
+    }
+
+    function showPrize(prize){
+      console.log('Showing prize:', prize);
+      currentState = 'prize';
+      clearAdLoop();
+      
+      // Hide other overlays
+      pricingArea.style.display = 'none';
+      pricingArea.style.opacity = '0';
+      gameOverlay.style.opacity = '0';
+      setTimeout(() => gameOverlay.style.display = 'none', 300);
+      
+      // Set prize content
+      prizeImg.src = prize.media || '/media/sample1.jpg';
+      prizeTitle.textContent = prize.title || 'Amazing Prize!';
+      prizeDesc.textContent = prize.description || 'Congratulations on winning this fantastic prize!';
+      
+      // Show prize reveal with dramatic animation
+      gsap.set(prizeReveal, { display: 'flex', opacity: 0 });
+      gsap.to(prizeReveal, { opacity: 1, duration: 0.8 });
+      
+      // Animate prize card entrance
+      gsap.fromTo('#prizeCard', 
+        { scale: 0.3, opacity: 0, rotateY: 180 }, 
+        { scale: 1, opacity: 1, rotateY: 0, duration: 1.5, ease: 'back.out(1.2)' }
+      );
+      
+      // Animate winner banner
+      gsap.fromTo('#winnerBanner', 
+        { y: -100, opacity: 0 }, 
+        { y: 0, opacity: 1, duration: 1, ease: 'bounce.out', delay: 0.5 }
+      );
+      
+      // Create prize particles
+      createParticles(document.getElementById('prizeParticles'), 60);
+      
+      // Enhanced confetti sequence
+      setTimeout(() => {
+        confetti({
+          particleCount: 150,
+          spread: 70,
+          origin: { y: 0.3 },
+          colors: ['#ffd700', '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7']
+        });
+      }, 500);
+      
+      setTimeout(() => {
+        confetti({
+          particleCount: 100,
+          spread: 50,
+          origin: { y: 0.7 },
+          colors: ['#fd79a8', '#fdcb6e', '#6c5ce7', '#a29bfe', '#fd79a8']
+        });
+      }, 1000);
+      
+      celebrate.play().catch(() => {});
+      
+      // Auto-hide after 8 seconds with fade out
+      setTimeout(() => {
+        gsap.to(prizeReveal, {
+          opacity: 0,
+          duration: 1,
+          ease: "power2.inOut",
+          onComplete: () => {
+            prizeReveal.style.display = 'none';
+            if(currentState === 'prize') {
+              currentState = 'idle';
+              resumeAdLoop(); // Use resumeAdLoop instead of startAdLoop
+            }
+          }
+        });
+      }, 8000);
+    }
+
+    function endRound(){
+      console.log('Ending round');
+      currentState = 'idle';
+      
+      // Smooth transition back to idle state
+      gsap.to([prizeReveal, gameOverlay], {
+        opacity: 0,
+        duration: 0.8,
+        ease: "power2.inOut",
+        onComplete: () => {
+          prizeReveal.style.display = 'none';
+          gameOverlay.style.display = 'none';
+          pricingArea.style.display = 'none';
+          resumeAdLoop(); // Use resumeAdLoop instead of startAdLoop
+        }
+      });
+    }
+
+    // Auto-login with enhanced error handling and user-friendly timing
+    async function attemptAutoLogin() {
+      console.log('Attempting auto-login...');
+      
+      try {
+        const token = localStorage.getItem('token');
+        const deviceData = localStorage.getItem('device');
+        
+        if (!token || !deviceData) {
+          console.log('No stored credentials found - showing login form');
+          return;
+        }
+        
+        let parsedDevice;
+        try {
+          parsedDevice = JSON.parse(deviceData);
+        } catch (parseError) {
+          console.error('Failed to parse stored device data:', parseError);
+          localStorage.removeItem('token');
+          localStorage.removeItem('device');
+          return;
+        }
+        
+        if (!parsedDevice || parsedDevice.role !== 'screen') {
+          console.log('Invalid device role or missing device data');
+          return;
+        }
+        
+        // Show auto-login status to user
+        loginError.textContent = 'Found saved credentials, attempting auto-login...';
+        loginError.className = 'text-blue-300 text-center text-sm min-h-[20px]';
+        
+        // Validate token
+        updateConnectionStatus('connecting');
+        const testResponse = await fetch(`/api/games/${parsedDevice.gameId}/media`, {
+          headers: { Authorization: 'Bearer ' + token }
+        });
+        
+        if (!testResponse.ok) {
+          console.log('Stored token is invalid');
+          localStorage.removeItem('token');
+          localStorage.removeItem('device');
+          updateConnectionStatus('error');
+          loginError.textContent = 'Saved credentials expired, please login again';
+          loginError.className = 'text-yellow-300 text-center text-sm min-h-[20px]';
+          return;
+        }
+        
+        // Auto-login successful - give user a moment to see the success message
+        loginError.textContent = 'Auto-login successful! Loading screen...';
+        loginError.className = 'text-green-300 text-center text-sm min-h-[20px]';
+        
+        console.log('Auto-login successful');
+        device = parsedDevice;
+        
+        // Wait a bit longer before transitioning so user can see the success
+        setTimeout(() => {
+          gsap.to(loginWrap, {
+            opacity: 0,
+            scale: 0.9,
+            duration: 0.8,
+            ease: "power2.inOut",
+            onComplete: () => {
+              hideLoginForm();
+              initSocket();
+              loadGameMedia().then(() => {
+                startAdLoop();
+              });
+            }
+          });
+        }, 1500); // Give user time to read the success message
+        
+      } catch (error) {
+        console.error('Auto-login failed:', error);
+        localStorage.removeItem('token');
+        localStorage.removeItem('device');
+        updateConnectionStatus('error');
+        loginError.textContent = 'Auto-login failed, please login manually';
+        loginError.className = 'text-red-300 text-center text-sm min-h-[20px]';
+      }
+    }
+
+    // Enhanced page initialization
+    function initializePage() {
+      console.log('Initializing announcement screen...');
+      
+      // Show login form with entrance animation
+      showLoginForm();
+      
+      // Add keyboard support
+      [deviceIdInput, deviceSecretInput].forEach(input => {
+        input.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
+            loginBtn.click();
+          }
+        });
+      });
+    }
+
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initializePage);
+    } else {
+      initializePage();
+    }
+
+    // Backup initialization
+    window.addEventListener('load', () => {
+      if (loginWrap.style.display === 'none' && screen.classList.contains('hidden')) {
+        console.log('Backup initialization triggered');
+        showLoginForm();
+      }
+    });
+
+    // Enhanced error handling for media elements
+    function setupMediaErrorHandling() {
+      [adVideo, adImage, pricingVideo, pricingImage].forEach(element => {
+        element.addEventListener('error', (e) => {
+          console.error('Media error:', e.target.src);
+          // Don't change connection status for media errors
+        });
+      });
+    }
+
+    // Call setup after page loads
+    setTimeout(setupMediaErrorHandling, 1000);
+
+    // Prevent context menu and selection for clean presentation
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('selectstart', e => e.preventDefault());
+    
+    // Enhanced visibility change handling - FIXED VERSION
+    document.addEventListener('visibilitychange', () => {
+      isPageVisible = !document.hidden;
+      console.log('Page visibility changed:', isPageVisible ? 'visible' : 'hidden');
+      
+      if (isPageVisible) {
+        console.log('Page became visible - current state:', currentState);
+        
+        // Only handle socket reconnection and media resumption
+        if (socket && !socket.connected) {
+          console.log('Attempting to reconnect socket...');
+          updateConnectionStatus('reconnecting');
+          socket.connect();
+        }
+        
+        // Resume video playback if paused (browsers pause videos on hidden tabs)
+        if (currentState === 'idle' && !adVideo.classList.contains('hidden') && adVideo.paused) {
+          console.log('Resuming paused video');
+          adVideo.play().catch(e => console.log('Could not resume video:', e));
+        }
+        
+        if (currentState === 'pricing' && !pricingVideo.classList.contains('hidden') && pricingVideo.paused) {
+          console.log('Resuming paused pricing video');
+          pricingVideo.play().catch(e => console.log('Could not resume pricing video:', e));
+        }
+        
+        // DO NOT restart the ad loop - just let it continue where it was
+      } else {
+        console.log('Page became hidden');
+      }
+    });
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+      if (socket) {
+        socket.disconnect();
+      }
+      clearAdLoop();
+    });
+  </script>
+</body>
+</html>

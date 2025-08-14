@@ -1,0 +1,48 @@
+version: '3.8'
+services:
+  app:
+    build: .
+    container_name: game_app
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "127.0.0.1:3000:3000" # bind to localhost; nginx will proxy
+    volumes:
+      - ./public/uploads:/usr/src/app/public/uploads
+      - ./db:/usr/src/app/db
+    networks:
+      - webnet
+
+  nginx:
+    image: nginx:stable-alpine
+    container_name: game_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./public:/usr/src/app/public:ro
+      - ./public/uploads:/usr/src/app/public/uploads:ro
+      - ./letsencrypt:/etc/letsencrypt
+      - ./letsencrypt-www:/var/www/certbot
+    depends_on:
+      - app
+    networks:
+      - webnet
+
+  certbot:
+    image: certbot/certbot
+    container_name: certbot
+    volumes:
+      - ./letsencrypt:/etc/letsencrypt
+      - ./letsencrypt-www:/var/www/certbot
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+    entrypoint: ""
+    networks:
+      - webnet
+
+networks:
+  webnet:
+    driver: bridge

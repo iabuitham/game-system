@@ -1,0 +1,511 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Admin — Manage Games, Prizes, Devices, Media</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-white min-h-screen">
+  <div class="max-w-7xl mx-auto p-6">
+    <header class="mb-6">
+      <h1 class="text-3xl font-bold">Admin Panel</h1>
+      <p class="text-sm opacity-80">Manage and create games, prizes, devices, and media</p>
+    </header>
+
+    <!-- Game Management Section -->
+    <section class="mb-6">
+      <div class="bg-white/5 p-4 rounded-lg">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="font-semibold text-lg">Game Management</h2>
+          <button id="addGameBtn" class="px-4 py-2 bg-green-500 rounded hover:bg-green-600">Add New Game</button>
+        </div>
+        
+        <!-- Add/Edit Game Form -->
+        <div id="gameForm" class="mb-4 p-4 bg-black/30 rounded-lg hidden">
+          <h3 class="font-medium mb-3" id="gameFormTitle">Add New Game</h3>
+          <div class="flex gap-3">
+            <input id="gameNameInput" class="flex-1 p-2 rounded bg-black/30" placeholder="Game Name" />
+            <button id="saveGameBtn" class="px-4 py-2 bg-blue-500 rounded hover:bg-blue-600">Save</button>
+            <button id="cancelGameBtn" class="px-4 py-2 bg-gray-500 rounded hover:bg-gray-600">Cancel</button>
+          </div>
+          <div id="gameFormError" class="text-red-300 text-sm mt-2"></div>
+        </div>
+        
+        <!-- Games List -->
+        <div id="gamesList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Games will be loaded here -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Grid -->
+    <section class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <!-- Create Prize -->
+      <div class="bg-white/5 p-4 rounded-lg">
+        <h2 class="font-semibold mb-2">Create Prize</h2>
+        <form id="prizeForm" class="space-y-2">
+          <select id="prizeGame" class="w-full p-2 rounded bg-black/30"></select>
+          <input id="prizeTitle" class="w-full p-2 rounded bg-black/30" placeholder="Title" />
+          <input id="prizeDesc" class="w-full p-2 rounded bg-black/30" placeholder="Description" />
+          <input id="prizeMedia" type="file" class="w-full" />
+          <button class="mt-2 px-4 py-2 bg-emerald-500 rounded" type="submit">Create Prize</button>
+        </form>
+      </div>
+
+      <!-- Create Device -->
+      <div class="bg-white/5 p-4 rounded-lg">
+        <h2 class="font-semibold mb-2">Create Device</h2>
+        <form id="deviceForm" class="space-y-2">
+          <select id="deviceGame" class="w-full p-2 rounded bg-black/30"></select>
+          <input id="deviceId" class="w-full p-2 rounded bg-black/30" placeholder="Device ID e.g. OP-10" />
+          <select id="deviceRole" class="w-full p-2 rounded bg-black/30">
+            <option value="operator">operator</option>
+            <option value="screen">screen</option>
+          </select>
+          <button class="mt-2 px-4 py-2 bg-indigo-500 rounded" type="submit">Create Device</button>
+        </form>
+        <div id="deviceResult" class="mt-2 text-sm"></div>
+      </div>
+
+      <!-- Upload Media -->
+      <div class="bg-white/5 p-4 rounded-lg">
+        <h2 class="font-semibold mb-2">Upload Media</h2>
+        <form id="mediaForm" class="space-y-2">
+          <select id="mediaGame" class="w-full p-2 rounded bg-black/30"></select>
+          <input id="mediaTitle" class="w-full p-2 rounded bg-black/30" placeholder="Media Title" />
+          <select id="mediaType" class="w-full p-2 rounded bg-black/30">
+            <option value="advertisement">Advertisement Media</option>
+            <option value="pricing">Pricing Sheet</option>
+          </select>
+          <input id="mediaFile" type="file" class="w-full" accept="image/*,video/*" />
+          <button class="mt-2 px-4 py-2 bg-purple-500 rounded" type="submit">Upload Media</button>
+        </form>
+      </div>
+
+      <!-- Assign Media to Game -->
+      <div class="bg-white/5 p-4 rounded-lg">
+        <h2 class="font-semibold mb-2">Assign Media</h2>
+        <form id="assignForm" class="space-y-2">
+          <select id="assignGame" class="w-full p-2 rounded bg-black/30"></select>
+          <select id="assignMedia" class="w-full p-2 rounded bg-black/30"></select>
+          <button class="mt-2 px-4 py-2 bg-blue-500 rounded" type="submit">Assign to Game</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- Lists Section -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+      <!-- Existing Prizes -->
+      <div class="bg-white/5 p-4 rounded-lg">
+        <h2 class="font-semibold mb-2">Existing Prizes</h2>
+        <div id="prizeList" class="space-y-2 max-h-72 overflow-auto"></div>
+      </div>
+
+      <!-- Existing Devices -->
+      <div class="bg-white/5 p-4 rounded-lg">
+        <h2 class="font-semibold mb-2">Existing Devices</h2>
+        <div id="deviceList" class="space-y-2 max-h-72 overflow-auto"></div>
+      </div>
+
+      <!-- Media Library -->
+      <div class="bg-white/5 p-4 rounded-lg">
+        <h2 class="font-semibold mb-2">Media Library</h2>
+        <div id="mediaList" class="space-y-2 max-h-72 overflow-auto"></div>
+      </div>
+    </section>
+
+    <!-- Game Media Assignments -->
+    <section class="mt-6">
+      <div class="bg-white/5 p-4 rounded-lg">
+        <h2 class="font-semibold mb-2">Game Media Assignments</h2>
+        <div id="gameMediaList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const ADMIN_SECRET = prompt("Enter admin secret (default 'adminpass')") || 'adminpass';
+    let editingGameId = null;
+
+    async function adminFetch(path, opts){
+  opts = opts || {};
+  opts.headers = Object.assign({'X-Admin-Secret': ADMIN_SECRET}, opts.headers||{});
+  
+  try {
+    const response = await fetch(path, opts);
+    
+    // Check if response is ok first
+    if (!response.ok) {
+      console.error(`HTTP Error: ${response.status} ${response.statusText}`);
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    // Check content type
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      // Log the actual response for debugging
+      const text = await response.text();
+      console.error('Expected JSON but got:', contentType);
+      console.error('Response body:', text.substring(0, 500));
+      throw new Error(`Expected JSON but got ${contentType || 'unknown'}: ${text.substring(0, 100)}...`);
+    }
+    
+    return response;
+  } catch (error) {
+    console.error('adminFetch error:', error);
+    throw error;
+  }
+}
+
+    // Game Management Functions
+    async function loadGames(){
+      const res = await adminFetch('/api/admin/games');
+      const games = await res.json();
+      
+      // Update all game select dropdowns
+      const selects = ['prizeGame', 'deviceGame', 'mediaGame', 'assignGame'];
+      selects.forEach(selectId => {
+        const select = document.getElementById(selectId);
+        select.innerHTML = '';
+        for(const g of games){
+          const o = document.createElement('option'); 
+          o.value = g.id; 
+          o.textContent = g.name;
+          select.appendChild(o);
+        }
+      });
+      
+      // Update games list display
+      const gamesList = document.getElementById('gamesList');
+      gamesList.innerHTML = '';
+      
+      for(const game of games) {
+        const gameCard = document.createElement('div');
+        gameCard.className = 'bg-black/30 p-4 rounded-lg';
+        gameCard.innerHTML = `
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="font-bold text-lg">${game.name}</h3>
+            <div class="flex gap-2">
+              <button data-id="${game.id}" data-name="${game.name}" class="editGameBtn px-2 py-1 bg-blue-500 rounded text-sm hover:bg-blue-600">Edit</button>
+              <button data-id="${game.id}" data-name="${game.name}" class="deleteGameBtn px-2 py-1 bg-red-500 rounded text-sm hover:bg-red-600">Delete</button>
+            </div>
+          </div>
+          <div class="text-sm opacity-70">Game ID: ${game.id}</div>
+        `;
+        gamesList.appendChild(gameCard);
+      }
+      
+      // Add event listeners for edit/delete buttons
+      document.querySelectorAll('.editGameBtn').forEach(btn => {
+        btn.onclick = () => editGame(parseInt(btn.dataset.id), btn.dataset.name);
+      });
+      
+      document.querySelectorAll('.deleteGameBtn').forEach(btn => {
+        btn.onclick = () => deleteGame(parseInt(btn.dataset.id), btn.dataset.name);
+      });
+      
+      // Load other data
+      loadPrizes();
+      loadDevices();
+      loadMedia();
+      loadGameMediaAssignments();
+    }
+
+    async function createGame(name) {
+      const res = await adminFetch('/api/admin/games', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({name})
+      });
+      
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to create game');
+      }
+      
+      return await res.json();
+    }
+
+    async function updateGame(id, name) {
+      const res = await adminFetch(`/api/admin/games/${id}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({name})
+      });
+      
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to update game');
+      }
+      
+      return await res.json();
+    }
+
+    async function deleteGame(id, name) {
+      if (!confirm(`Are you sure you want to delete the game "${name}"?\n\nThis will also delete all associated prizes, devices, and media assignments.`)) {
+        return;
+      }
+      
+      const res = await adminFetch(`/api/admin/games/${id}`, {
+        method: 'DELETE'
+      });
+      
+      if (!res.ok) {
+        const error = await res.json();
+        alert('Error deleting game: ' + (error.error || 'Unknown error'));
+        return;
+      }
+      
+      alert('Game deleted successfully');
+      loadGames();
+    }
+
+    function showGameForm() {
+      document.getElementById('gameForm').classList.remove('hidden');
+    }
+
+    function hideGameForm() {
+      document.getElementById('gameForm').classList.add('hidden');
+      document.getElementById('gameNameInput').value = '';
+      document.getElementById('gameFormError').textContent = '';
+      editingGameId = null;
+      document.getElementById('gameFormTitle').textContent = 'Add New Game';
+    }
+
+    function editGame(id, name) {
+      editingGameId = id;
+      document.getElementById('gameFormTitle').textContent = 'Edit Game';
+      document.getElementById('gameNameInput').value = name;
+      showGameForm();
+    }
+
+    // Event Listeners for Game Management
+    document.getElementById('addGameBtn').onclick = () => {
+      editingGameId = null;
+      document.getElementById('gameFormTitle').textContent = 'Add New Game';
+      showGameForm();
+    };
+
+    document.getElementById('saveGameBtn').onclick = async () => {
+      const name = document.getElementById('gameNameInput').value.trim();
+      const errorDiv = document.getElementById('gameFormError');
+      
+      if (!name) {
+        errorDiv.textContent = 'Game name is required';
+        return;
+      }
+      
+      try {
+        if (editingGameId) {
+          await updateGame(editingGameId, name);
+          alert('Game updated successfully');
+        } else {
+          await createGame(name);
+          alert('Game created successfully');
+        }
+        
+        hideGameForm();
+        loadGames();
+      } catch (error) {
+        errorDiv.textContent = error.message;
+      }
+    };
+
+    document.getElementById('cancelGameBtn').onclick = hideGameForm;
+
+    // Existing functions (keeping all the original functionality)
+    async function loadPrizes(){
+      const res = await adminFetch('/api/admin/prizes');
+      const prizes = await res.json();
+      const prizeList = document.getElementById('prizeList');
+      prizeList.innerHTML = '';
+      for(const p of prizes){
+        const div = document.createElement('div');
+        div.className = 'p-2 bg-black/30 rounded flex items-start gap-2';
+        div.innerHTML = `<div class="flex-1"><strong>${p.title}</strong><div class="text-xs opacity-70">${p.game_name||''}</div></div>
+                         <div class="flex gap-2"><button data-id="${p.id}" class="editBtn px-2 py-1 bg-indigo-600 rounded text-sm">Edit</button>
+                         <button data-id="${p.id}" class="delBtn px-2 py-1 bg-red-600 rounded text-sm">Delete</button></div>`;
+        prizeList.appendChild(div);
+      }
+      document.querySelectorAll('.delBtn').forEach(b=>{
+        b.onclick = async ()=>{ if(confirm('Delete prize?')){ await adminFetch('/api/admin/prizes/'+b.dataset.id, { method:'DELETE' }); loadPrizes(); } };
+      });
+    }
+
+    async function loadDevices(){
+      const res = await adminFetch('/api/admin/devices');
+      const devices = await res.json();
+      const deviceList = document.getElementById('deviceList');
+      deviceList.innerHTML = '';
+      for(const d of devices){
+        const div = document.createElement('div');
+        div.className = 'p-2 bg-black/30 rounded';
+        div.innerHTML = `<strong>${d.device_id}</strong> (${d.role}) <div class="text-xs opacity-70">${d.game_name||''} — secret: <code>${d.device_secret}</code></div>`;
+        deviceList.appendChild(div);
+      }
+    }
+
+    async function loadMedia(){
+      const res = await adminFetch('/api/admin/media');
+      const mediaItems = await res.json();
+      const mediaList = document.getElementById('mediaList');
+      const assignMedia = document.getElementById('assignMedia');
+      
+      mediaList.innerHTML = '';
+      assignMedia.innerHTML = '<option value="">Select Media</option>';
+      
+      for(const m of mediaItems){
+        const div = document.createElement('div');
+        div.className = 'p-2 bg-black/30 rounded flex items-start gap-2';
+        const typeColor = m.type === 'advertisement' ? 'bg-green-600' : 'bg-blue-600';
+        div.innerHTML = `
+          <div class="flex-1">
+            <strong>${m.title}</strong>
+            <div class="text-xs opacity-70">${m.filename}</div>
+            <span class="inline-block px-2 py-1 text-xs rounded ${typeColor}">${m.type}</span>
+          </div>
+          <div class="flex gap-2">
+            <button data-id="${m.id}" class="delMediaBtn px-2 py-1 bg-red-600 rounded text-sm">Delete</button>
+          </div>
+        `;
+        mediaList.appendChild(div);
+        
+        const option = document.createElement('option');
+        option.value = m.id;
+        option.textContent = `${m.title} (${m.type})`;
+        assignMedia.appendChild(option);
+      }
+      
+      document.querySelectorAll('.delMediaBtn').forEach(b=>{
+        b.onclick = async ()=>{ 
+          if(confirm('Delete media?')){ 
+            await adminFetch('/api/admin/media/'+b.dataset.id, { method:'DELETE' }); 
+            loadMedia(); 
+            loadGameMediaAssignments();
+          } 
+        };
+      });
+    }
+
+    async function loadGameMediaAssignments(){
+      const res = await adminFetch('/api/admin/game-media');
+      const assignments = await res.json();
+      const gameMediaList = document.getElementById('gameMediaList');
+      gameMediaList.innerHTML = '';
+      
+      for(const assignment of assignments){
+        const div = document.createElement('div');
+        div.className = 'p-4 bg-black/30 rounded-lg';
+        const typeColor = assignment.media_type === 'advertisement' ? 'bg-green-600' : 'bg-blue-600';
+        div.innerHTML = `
+          <h3 class="font-bold">${assignment.game_name}</h3>
+          <div class="mt-2 space-y-2">
+            <div class="flex items-center gap-2">
+              <span class="inline-block px-2 py-1 text-xs rounded ${typeColor}">${assignment.media_type}</span>
+              <span class="text-sm">${assignment.media_title}</span>
+              <button data-game="${assignment.game_id}" data-media="${assignment.media_id}" class="unassignBtn ml-auto px-2 py-1 bg-red-600 rounded text-xs">Remove</button>
+            </div>
+          </div>
+        `;
+        gameMediaList.appendChild(div);
+      }
+      
+      document.querySelectorAll('.unassignBtn').forEach(b=>{
+        b.onclick = async ()=>{ 
+          if(confirm('Remove media assignment?')){ 
+            await adminFetch(`/api/admin/game-media/${b.dataset.game}/${b.dataset.media}`, { method:'DELETE' }); 
+            loadGameMediaAssignments();
+          } 
+        };
+      });
+    }
+
+    // Form submissions (keeping original functionality)
+    document.getElementById('prizeForm').onsubmit = async (e) => {
+      e.preventDefault();
+      const game_id = document.getElementById('prizeGame').value;
+      const title = document.getElementById('prizeTitle').value;
+      const description = document.getElementById('prizeDesc').value;
+      const file = document.getElementById('prizeMedia').files[0];
+      const form = new FormData();
+      form.append('game_id', game_id);
+      form.append('title', title);
+      form.append('description', description);
+      if(file) form.append('media', file);
+      await adminFetch('/api/admin/prizes', { method:'POST', body: form });
+      alert('Prize created');
+      loadPrizes();
+      document.getElementById('prizeForm').reset();
+    };
+
+    document.getElementById('deviceForm').onsubmit = async (e) => {
+      e.preventDefault();
+      const game_id = document.getElementById('deviceGame').value;
+      const device_id = document.getElementById('deviceId').value;
+      const role = document.getElementById('deviceRole').value;
+      const res = await adminFetch('/api/admin/devices', { method:'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ game_id, device_id, role }) });
+      const data = await res.json();
+      document.getElementById('deviceResult').innerText = 'Created: ' + JSON.stringify(data);
+      loadDevices();
+      document.getElementById('deviceForm').reset();
+    };
+
+    document.getElementById('mediaForm').onsubmit = async (e) => {
+      e.preventDefault();
+      const game_id = document.getElementById('mediaGame').value;
+      const title = document.getElementById('mediaTitle').value;
+      const type = document.getElementById('mediaType').value;
+      const file = document.getElementById('mediaFile').files[0];
+      
+      if(!file) {
+        alert('Please select a file');
+        return;
+      }
+      
+      const form = new FormData();
+      form.append('game_id', game_id);
+      form.append('title', title);
+      form.append('type', type);
+      form.append('media', file);
+      
+      try {
+        await adminFetch('/api/admin/media', { method:'POST', body: form });
+        alert('Media uploaded successfully');
+        loadMedia();
+        loadGameMediaAssignments();
+        document.getElementById('mediaForm').reset();
+      } catch (e) {
+        alert('Error uploading media: ' + e.message);
+      }
+    };
+
+    document.getElementById('assignForm').onsubmit = async (e) => {
+      e.preventDefault();
+      const game_id = document.getElementById('assignGame').value;
+      const media_id = document.getElementById('assignMedia').value;
+      
+      if(!media_id) {
+        alert('Please select media to assign');
+        return;
+      }
+      
+      try {
+        await adminFetch('/api/admin/game-media', { 
+          method:'POST', 
+          headers: {'Content-Type':'application/json'}, 
+          body: JSON.stringify({ game_id, media_id }) 
+        });
+        alert('Media assigned to game');
+        loadGameMediaAssignments();
+        document.getElementById('assignForm').reset();
+      } catch (e) {
+        alert('Error assigning media: ' + e.message);
+      }
+    };
+
+    // Initialize
+    loadGames();
+  </script>
+</body>
+</html>
