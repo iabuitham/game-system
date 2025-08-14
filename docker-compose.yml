@@ -7,7 +7,7 @@ services:
     env_file:
       - .env
     ports:
-      - "127.0.0.1:3000:3000" # bind to localhost; nginx will proxy
+      - "127.0.0.1:3001:3001" # bind to localhost; nginx will proxy
     volumes:
       - ./public/uploads:/usr/src/app/public/uploads
       - ./db:/usr/src/app/db
