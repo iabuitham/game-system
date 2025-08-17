@@ -477,7 +477,7 @@
         if (adMedia.length === 0) {
           console.log('No advertisement media found, using fallback');
           adMedia = [
-            {media_url: '/media/welcome.mp4', type: 'advertisement', title: 'Welcome'}
+            {media_url: '/media/Welcome.mp4', type: 'advertisement', title: 'Welcome'}
           ];
         }
         
@@ -489,7 +489,7 @@
         
         // Fallback to default media
         adMedia = [
-          {media_url: '/media/welcome.mp4', type: 'advertisement', title: 'Welcome'}
+          {media_url: '/media/Welcome.mp4', type: 'advertisement', title: 'Welcome'}
         ];
       }
     }
@@ -691,7 +691,7 @@
           console.error('Video play failed:', e);
           // Fallback to image
           adVideo.classList.add('hidden');
-          adImage.src = '/media/welcome.mp4';
+          adImage.src = '/media/Welcome.mp4';
           adImage.classList.remove('hidden');
         });
       } else {
@@ -701,7 +701,7 @@
         
         adImage.onerror = () => {
           console.error('Image failed to load:', path);
-          adImage.src = '/media/welcome.mp4';
+          adImage.src = '/media/Welcome.mp4';
         };
         adImage.onload = () => console.log('Image loaded successfully:', path);
       }
@@ -814,7 +814,7 @@
       setTimeout(() => gameOverlay.style.display = 'none', 300);
       
       // Set prize content
-      prizeImg.src = prize.media || '/media/welcome.mp4';
+      prizeImg.src = prize.media || '/media/Welcome.mp4';
       prizeTitle.textContent = prize.title || 'Amazing Prize!';
       prizeDesc.textContent = prize.description || 'Congratulations on winning this fantastic prize!';
       
