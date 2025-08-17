@@ -697,7 +697,7 @@ async function startServer() {
 
 // Try alternative ports if main port is busy
 async function tryAlternativePorts() {
-  const alternativePorts = [3001, 3002, 3003, 3004, 3005];
+  const alternativePorts = [3001, 3002, 3003, 3004, 3005, 3006, 3007, 3008, 3009, 3010];
   
   for (const port of alternativePorts) {
     try {
