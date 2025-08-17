@@ -147,7 +147,7 @@
       // Log the actual response for debugging
       const text = await response.text();
       console.error('Expected JSON but got:', contentType);
-      console.error('Response body:', text.substring(0, 500));
+      console.error('Response body Content:', text.substring(0, 500));
       throw new Error(`Expected JSON but got ${contentType || 'unknown'}: ${text.substring(0, 100)}...`);
     }
     
