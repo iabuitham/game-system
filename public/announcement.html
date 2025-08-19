@@ -54,25 +54,34 @@
     
     /* Media display improvements */
     .media-container {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      overflow: hidden;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      position: relative !important;
+      overflow: hidden !important;
+      width: 100% !important;
+      height: 100% !important;
     }
     
     .media-element {
-      max-width: 95%;
-      max-height: 95%;
-      object-fit: contain;
-      border-radius: 16px;
-      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
-      transition: all 0.5s ease;
+      max-width: 95% !important;
+      max-height: 95% !important;
+      object-fit: contain !important;
+      border-radius: 16px !important;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5) !important;
+      transition: all 0.5s ease !important;
+      display: block !important;
     }
     
     .media-element:hover {
       transform: scale(1.02);
       box-shadow: 0 30px 60px rgba(0, 0, 0, 0.7);
+    }
+    
+    /* CRITICAL: Ensure hidden class works properly */
+    .hidden {
+      display: none !important;
+      opacity: 0 !important;
     }
     
     /* Prize reveal enhancements */
@@ -300,9 +309,8 @@
   <audio id="gameStart" src="/media/game-start.mp3" preload="auto"></audio>
   <audio id="transition" src="/media/transition.mp3" preload="auto"></audio>
 
-
   <script>
-    // Shared functions (inline to avoid loading issues)
+    // ==================== SHARED FUNCTIONS ====================
     async function deviceLogin(deviceId, deviceSecret) {
       const res = await fetch("/api/auth/device", {
         method: "POST",
@@ -323,7 +331,7 @@
       return localStorage.getItem("token");
     }
 
-    // Main application
+    // ==================== MAIN APPLICATION ====================
     const loginWrap = document.getElementById('loginWrap');
     const loginBtn = document.getElementById('loginBtn');
     const loginText = document.getElementById('loginText');
@@ -365,6 +373,8 @@
     let reconnectAttempts = 0;
     let maxReconnectAttempts = 5;
 
+    // ==================== UTILITY FUNCTIONS ====================
+
     // Particle system
     function createParticles(container, count = 50) {
       container.innerHTML = '';
@@ -381,52 +391,6 @@
     // Initialize login screen particles
     createParticles(document.getElementById('loginParticles'), 30);
 
-    // Enhanced login process
-    loginBtn.onclick = async () => {
-      loginError.textContent = '';
-      loginText.style.display = 'none';
-      loginSpinner.classList.remove('hidden');
-      loginBtn.disabled = true;
-      
-      try {
-        const data = await deviceLogin(deviceIdInput.value.trim(), deviceSecretInput.value.trim());
-        device = data.device;
-        
-        if (device.role !== 'screen') {
-          throw new Error('This device is not configured as a screen');
-        }
-        
-        // Success animation
-        gsap.to(loginWrap, {
-          scale: 1.1,
-          opacity: 0,
-          duration: 0.8,
-          ease: "power2.inOut",
-          onComplete: () => {
-            hideLoginForm();
-            initSocket();
-            loadGameMedia().then(() => {
-              startAdLoop();
-              updateConnectionStatus('connected');
-            });
-          }
-        });
-        
-      } catch (e) {
-        loginError.textContent = e.message;
-        loginText.style.display = 'inline';
-        loginSpinner.classList.add('hidden');
-        loginBtn.disabled = false;
-        
-        // Error shake animation
-        gsap.to(loginError, {
-          x: [-10, 10, -10, 10, 0],
-          duration: 0.5,
-          ease: "power2.inOut"
-        });
-      }
-    };
-
     // Enhanced connection status updates
     function updateConnectionStatus(status) {
       const statusMap = {
@@ -442,169 +406,320 @@
       connectionText.textContent = config.text;
     }
 
-    function showLoginForm() {
-      loginWrap.style.display = 'flex';
-      screen.classList.add('hidden');
-      gsap.fromTo(loginWrap, { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.6, ease: "back.out(1.7)" });
+    // ==================== MEDIA SYSTEM FUNCTIONS ====================
+
+    // CRITICAL: Ensure media elements are properly configured
+    function ensureMediaVisibility() {
+      console.log('🔧 Ensuring media elements are properly configured');
+      
+      // Force critical CSS properties for all media elements
+      [adVideo, adImage, pricingVideo, pricingImage].forEach(element => {
+        if (element) {
+          element.style.maxWidth = '100%';
+          element.style.maxHeight = '100%';
+          element.style.objectFit = 'contain';
+          element.style.display = 'block'; // Override any display: none
+          element.style.position = 'relative';
+          element.style.zIndex = '1';
+          console.log(`✅ Configured ${element.tagName} element:`, element.id);
+        }
+      });
+      
+      // Ensure containers have proper sizing
+      [adArea, pricingArea].forEach(container => {
+        if (container) {
+          container.style.width = '100%';
+          container.style.height = '100%';
+          container.style.position = 'absolute';
+          container.style.top = '0';
+          container.style.left = '0';
+          console.log(`✅ Configured ${container.id} container`);
+        }
+      });
     }
 
-    function hideLoginForm() {
-      loginWrap.style.display = 'none';
-      screen.classList.remove('hidden');
-      gsap.fromTo(screen, { opacity: 0 }, { opacity: 1, duration: 0.8 });
+    // Initialize media system
+    function initializeMediaSystem() {
+      console.log('🚀 Initializing media system...');
+      
+      // Ensure all media elements exist
+      const requiredElements = ['adArea', 'adVideo', 'adImage', 'pricingArea', 'pricingVideo', 'pricingImage'];
+      const missingElements = requiredElements.filter(id => !document.getElementById(id));
+      
+      if (missingElements.length > 0) {
+        console.error('❌ Missing required elements:', missingElements);
+        return false;
+      }
+      
+      // Configure media elements
+      ensureMediaVisibility();
+      
+      // Add global error handlers for media elements
+      window.addEventListener('error', (e) => {
+        if (e.target && (e.target.tagName === 'VIDEO' || e.target.tagName === 'IMG')) {
+          console.error('❌ Media element error:', e.target.src, e.message);
+          // Don't change connection status for media errors - keep it separate
+        }
+      }, true); // Use capture phase to catch all media errors
+      
+      console.log('✅ Media system initialized successfully');
+      return true;
     }
 
+    // Enhanced showAdMedia function with comprehensive error handling
+    function showAdMedia(mediaItem) {
+      if(!mediaItem || !mediaItem.media_url) {
+        console.log('❌ No media item to show:', mediaItem);
+        return;
+      }
+      
+      console.log('🎬 Showing ad media:', mediaItem.media_url);
+      const path = mediaItem.media_url;
+      
+      // CRITICAL: Reset both elements completely
+      adVideo.classList.add('hidden');
+      adImage.classList.add('hidden');
+      adVideo.pause();
+      adVideo.currentTime = 0;
+      adVideo.src = ''; // Clear previous source
+      adImage.src = '';
+      
+      if(path.includes('.mp4') || path.includes('.webm') || path.includes('.mov')){
+        // VIDEO HANDLING WITH BETTER ERROR RECOVERY
+        console.log('📹 Loading video:', path);
+        adVideo.src = path;
+        
+        // Add comprehensive error handling
+        adVideo.onerror = (e) => {
+          console.error('❌ Video load error:', e, 'Source:', path);
+          // Fallback to emergency content
+          adVideo.classList.add('hidden');
+          showEmergencyContent('video_error');
+        };
+        
+        adVideo.onloadstart = () => {
+          console.log('📹 Video load started');
+        };
+        
+        adVideo.onloadeddata = () => {
+          console.log('📹 Video data loaded, showing element');
+          adVideo.classList.remove('hidden');
+          // Ensure visibility with explicit styles
+          adVideo.style.opacity = '1';
+          adVideo.style.display = 'block';
+          adVideo.style.visibility = 'visible';
+        };
+        
+        adVideo.onloadedmetadata = () => {
+          console.log('📹 Video metadata loaded - duration:', adVideo.duration);
+          // Schedule next ad only after current one is ready
+          if(adMedia.length > 1 && currentState === 'idle') {
+            scheduleNextAd();
+          }
+        };
+        
+        // Start loading and playing
+        adVideo.load(); // Force reload
+        
+        adVideo.play().then(() => {
+          console.log('✅ Video playing successfully');
+        }).catch((e) => {
+          console.error('❌ Video play failed:', e);
+          // Better fallback - try loading as image
+          adVideo.classList.add('hidden');
+          adImage.src = path; // Maybe it's actually an image with wrong extension
+          adImage.classList.remove('hidden');
+        });
+        
+      } else {
+        // IMAGE HANDLING WITH BETTER ERROR RECOVERY
+        console.log('🖼️ Loading image:', path);
+        adVideo.pause(); // Ensure video is stopped
+        
+        adImage.onerror = (e) => {
+          console.error('❌ Image failed to load:', path, e);
+          // Try common fallback paths
+          const fallbacks = [
+            '/media/Welcome.jpg', 
+            '/media/welcome.png', 
+            '/media/default.jpg',
+            '/media/logo.png'
+          ];
+          
+          const currentSrc = adImage.src;
+          const nextFallback = fallbacks.find(f => !currentSrc.includes(f));
+          
+          if (nextFallback) {
+            console.log('🔄 Trying fallback:', nextFallback);
+            adImage.src = nextFallback;
+          } else {
+            console.log('❌ All fallbacks failed, showing emergency content');
+            adImage.classList.add('hidden');
+            showEmergencyContent('image_error');
+          }
+        };
+        
+        adImage.onload = () => {
+          console.log('✅ Image loaded successfully:', path);
+          adImage.classList.remove('hidden');
+          // Ensure visibility
+          adImage.style.opacity = '1';
+          adImage.style.display = 'block';
+          adImage.style.visibility = 'visible';
+        };
+        
+        adImage.src = path;
+      }
+    }
+
+    // Emergency content fallback when all media fails
+    function showEmergencyContent(errorType = 'unknown') {
+      console.log('🆘 Showing emergency content for:', errorType);
+      
+      // Create SVG emergency content
+      const emergencyContent = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+        <defs>
+          <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:%23667eea;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:%23764ba2;stop-opacity:1" />
+          </linearGradient>
+        </defs>
+        <rect width="100%" height="100%" fill="url(%23grad)"/>
+        <text x="400" y="250" text-anchor="middle" fill="white" font-size="48" font-family="Arial, sans-serif" font-weight="bold">Welcome</text>
+        <text x="400" y="300" text-anchor="middle" fill="white" font-size="24" font-family="Arial, sans-serif">Loading content...</text>
+        <circle cx="400" cy="380" r="20" fill="white" opacity="0.7">
+          <animate attributeName="opacity" values="0.7;0.3;0.7" dur="2s" repeatCount="indefinite"/>
+        </circle>
+      </svg>`;
+      
+      adImage.src = emergencyContent;
+      adImage.classList.remove('hidden');
+      adImage.style.opacity = '1';
+      adImage.style.display = 'block';
+      adImage.style.visibility = 'visible';
+    }
+
+    // Enhanced loadGameMedia function with better error handling and fallbacks
     async function loadGameMedia(){
       try {
+        console.log('📁 Loading game media for gameId:', device?.gameId);
         updateConnectionStatus('connecting');
+        
+        const token = getToken();
+        if (!token) {
+          throw new Error('No authentication token available');
+        }
+        
         const res = await fetch(`/api/games/${device.gameId}/media`, {
-          headers: { Authorization: 'Bearer ' + getToken() }
+          headers: { 
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
+          }
         });
         
         if (!res.ok) {
+          const errorText = await res.text();
+          console.error('❌ Media fetch failed:', res.status, errorText);
           throw new Error(`HTTP ${res.status}: ${res.statusText}`);
         }
         
         const media = await res.json();
-        console.log('Loaded game media:', media);
+        console.log('✅ Loaded game media:', media);
         
         // Separate advertisement and pricing media
         adMedia = media.filter(m => m.type === 'advertisement');
         const pricing = media.find(m => m.type === 'pricing');
         pricingMedia = pricing || null;
         
-        // Fallback media if none exists
+        console.log('📺 Advertisement media count:', adMedia.length);
+        console.log('💰 Pricing media:', pricingMedia ? 'Found' : 'Not found');
+        
+        // CRITICAL: Enhanced fallback media with multiple options
         if (adMedia.length === 0) {
-          console.log('No advertisement media found, using fallback');
-          adMedia = [
-            {media_url: '/media/Welcome.mp4', type: 'advertisement', title: 'Welcome'}
+          console.log('⚠️ No advertisement media found, using enhanced fallbacks');
+          
+          // Try multiple fallback sources
+          const fallbackSources = [
+            {media_url: '/media/Welcome.mp4', type: 'advertisement', title: 'Welcome Video'},
+            {media_url: '/media/Welcome.jpg', type: 'advertisement', title: 'Welcome Image'},
+            {media_url: '/media/welcome.png', type: 'advertisement', title: 'Welcome PNG'},
+            {media_url: '/media/default.mp4', type: 'advertisement', title: 'Default Video'},
+            {media_url: '/media/logo.png', type: 'advertisement', title: 'Logo'},
+            // SVG fallback as absolute last resort
+            {
+              media_url: `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><defs><linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:%23667eea"/><stop offset="100%" style="stop-color:%23764ba2"/></linearGradient></defs><rect width="100%" height="100%" fill="url(%23bg)"/><text x="400" y="280" text-anchor="middle" fill="white" font-size="64" font-family="Arial" font-weight="bold">Welcome</text><text x="400" y="340" text-anchor="middle" fill="white" font-size="32" font-family="Arial">Ready to play!</text></svg>`, 
+              type: 'advertisement', 
+              title: 'SVG Welcome'
+            }
           ];
+          
+          adMedia = fallbackSources;
         }
         
         updateConnectionStatus('connected');
+        return true;
         
       } catch (e) {
-        console.error('Failed to load game media:', e);
+        console.error('❌ Failed to load game media:', e);
         updateConnectionStatus('error');
         
-        // Fallback to default media
+        // ABSOLUTE FALLBACK - create emergency media
+        console.log('🆘 Using emergency fallback media');
         adMedia = [
-          {media_url: '/media/Welcome.mp4', type: 'advertisement', title: 'Welcome'}
+          {
+            media_url: `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><rect width="100%" height="100%" fill="%23ff6b6b"/><text x="400" y="250" text-anchor="middle" fill="white" font-size="36" font-family="Arial" font-weight="bold">Media Loading Error</text><text x="400" y="300" text-anchor="middle" fill="white" font-size="24" font-family="Arial">Please check your media files</text><text x="400" y="380" text-anchor="middle" fill="white" font-size="18" font-family="Arial">Contact administrator for assistance</text></svg>`, 
+            type: 'advertisement', 
+            title: 'Error Fallback'
+          }
         ];
+        
+        return false;
       }
     }
 
-    // Enhanced socket connection with better reconnection handling
-    function initSocket(){
-      updateConnectionStatus('connecting');
-      reconnectAttempts = 0;
-      
-      socket = io({ 
-        auth: { token: getToken() },
-        forceNew: true,
-        timeout: 10000,
-        transports: ['websocket', 'polling']
-      });
-      
-      socket.on('connect', () => {
-        console.log('Socket connected');
-        updateConnectionStatus('connected');
-        reconnectAttempts = 0;
-      });
-      
-      socket.on('disconnect', (reason) => {
-        console.log('Socket disconnected:', reason);
-        updateConnectionStatus('disconnected');
-        
-        // Only attempt reconnection if the disconnect wasn't intentional
-        if (reason === 'io server disconnect') {
-          // Server initiated disconnect, try to reconnect after delay
-          setTimeout(() => {
-            if (reconnectAttempts < maxReconnectAttempts) {
-              console.log(`Attempting to reconnect (${reconnectAttempts + 1}/${maxReconnectAttempts})`);
-              reconnectAttempts++;
-              updateConnectionStatus('reconnecting');
-              socket.connect();
-            } else {
-              updateConnectionStatus('error');
-            }
-          }, 2000);
-        }
-      });
-      
-      socket.on('connect_error', (error) => {
-        console.error('Socket connection error:', error);
-        reconnectAttempts++;
-        
-        if (reconnectAttempts < maxReconnectAttempts) {
-          updateConnectionStatus('reconnecting');
-          setTimeout(() => {
-            console.log(`Retrying connection (${reconnectAttempts}/${maxReconnectAttempts})`);
-            socket.connect();
-          }, 3000);
-        } else {
-          updateConnectionStatus('error');
-        }
-      });
-      
-      socket.on('game_started', (payload) => {
-        console.log('Game started:', payload);
-        showGameInProgress();
-      });
-      
-      socket.on('prize_announced', (payload) => {
-        console.log('Prize announced:', payload);
-        showPrize(payload.prize);
-      });
-      
-      socket.on('round_finished', (payload) => {
-        console.log('Round finished:', payload);
-        endRound();
-      });
-      
-      socket.on('show_pricing_sheet', () => {
-        console.log('Show pricing sheet requested');
-        showPricingSheet();
-      });
-      
-      socket.on('hide_pricing_sheet', () => {
-        console.log('Hide pricing sheet requested');
-        hidePricingSheet();
-      });
-    }
-
+    // Enhanced startAdLoop function with better initialization
     function startAdLoop(){
-      if(adMedia.length === 0) {
-        console.log('No ad media available for loop');
+      console.log('🔄 Starting ad loop...');
+      
+      if(!adMedia || adMedia.length === 0) {
+        console.error('❌ No ad media available for loop');
+        // Try to reload media
+        loadGameMedia().then(() => {
+          if (adMedia && adMedia.length > 0) {
+            console.log('✅ Media reloaded, restarting loop');
+            startAdLoop();
+          } else {
+            console.error('❌ Still no media after reload');
+            showEmergencyContent('no_media');
+          }
+        });
         return;
       }
       
-      console.log('Starting ad loop with', adMedia.length, 'media items');
+      console.log('✅ Starting ad loop with', adMedia.length, 'media items');
       currentState = 'idle';
       adIndex = 0;
       
+      // CRITICAL: Ensure ad area is visible and properly styled
+      adArea.style.display = 'flex'; // Force display
+      adArea.style.opacity = '0'; // Start hidden for smooth transition
+      
       // Show ad area with animation
-      gsap.to(adArea, { opacity: 1, duration: 0.5 });
-      showAdMedia(adMedia[adIndex]);
+      gsap.to(adArea, { 
+        opacity: 1, 
+        duration: 0.5,
+        onComplete: () => {
+          console.log('🎬 Ad area visible, showing first media');
+          showAdMedia(adMedia[adIndex]);
+        }
+      });
       
+      // Schedule next ad if multiple media items
       if(adMedia.length > 1){
-        scheduleNextAd();
-      }
-    }
-
-    // Modified to preserve the current position in the loop when page becomes visible
-    function resumeAdLoop(){
-      if(adMedia.length === 0 || currentState !== 'idle') {
-        return;
-      }
-      
-      console.log('Resuming ad loop from current position:', adIndex);
-      
-      // Don't reset the index, just continue from where we were
-      showAdMedia(adMedia[adIndex]);
-      
-      if(adMedia.length > 1){
-        scheduleNextAd();
+        // Delay scheduling to ensure first media loads
+        setTimeout(() => {
+          scheduleNextAd();
+        }, 1000);
       }
     }
 
@@ -620,17 +735,21 @@
           currentMedia.media_url.includes('.mov'))){
         
         const video = adVideo;
-        if(video.duration && !isNaN(video.duration)){
+        if(video.duration && !isNaN(video.duration) && video.duration > 0){
           duration = Math.max(video.duration * 1000, 5000);
           console.log('Using video duration:', duration / 1000, 'seconds');
         } else {
-          duration = 15000;
+          duration = 15000; // Longer default for videos
         }
       }
+      
+      console.log('⏱️ Scheduling next ad in', duration / 1000, 'seconds');
       
       adTimer = setTimeout(() => {
         if(currentState === 'idle' && adMedia.length > 1 && isPageVisible){
           const nextIndex = (adIndex + 1) % adMedia.length;
+          
+          console.log('🔄 Transitioning from ad', adIndex, 'to ad', nextIndex);
           
           // Smooth transition between ads
           gsap.to([adVideo, adImage], {
@@ -655,65 +774,108 @@
     }
 
     function clearAdLoop(){
+      console.log('🛑 Clearing ad loop');
       if(adTimer) clearTimeout(adTimer);
       adVideo.pause();
       gsap.to(adArea, { opacity: 0, duration: 0.3 });
     }
 
-    function showAdMedia(mediaItem){
-      if(!mediaItem || !mediaItem.media_url) {
-        console.log('No media item to show:', mediaItem);
+    // Modified to preserve the current position in the loop when page becomes visible
+    function resumeAdLoop(){
+      if(adMedia.length === 0 || currentState !== 'idle') {
+        console.log('⚠️ Cannot resume ad loop - no media or wrong state');
         return;
       }
       
-      console.log('Showing ad media:', mediaItem.media_url);
-      const path = mediaItem.media_url;
+      console.log('▶️ Resuming ad loop from current position:', adIndex);
       
-      // Hide both elements first
-      adVideo.classList.add('hidden');
-      adImage.classList.add('hidden');
+      // Don't reset the index, just continue from where we were
+      adArea.style.display = 'flex';
+      gsap.to(adArea, { 
+        opacity: 1, 
+        duration: 0.5,
+        onComplete: () => {
+          showAdMedia(adMedia[adIndex]);
+        }
+      });
       
-      if(path.includes('.mp4') || path.includes('.webm') || path.includes('.mov')){
-        adVideo.src = path;
-        adVideo.classList.remove('hidden');
-        adVideo.currentTime = 0;
-        
-        adVideo.onloadedmetadata = () => {
-          console.log('Video metadata loaded - duration:', adVideo.duration);
-          if(adMedia.length > 1 && currentState === 'idle') {
-            scheduleNextAd();
-          }
-        };
-        
-        adVideo.play().then(() => {
-          console.log('Video playing successfully');
-        }).catch((e) => {
-          console.error('Video play failed:', e);
-          // Fallback to image
-          adVideo.classList.add('hidden');
-          adImage.src = '/media/Welcome.mp4';
-          adImage.classList.remove('hidden');
-        });
-      } else {
-        adVideo.pause();
-        adImage.src = path;
-        adImage.classList.remove('hidden');
-        
-        adImage.onerror = () => {
-          console.error('Image failed to load:', path);
-          adImage.src = '/media/Welcome.mp4';
-        };
-        adImage.onload = () => console.log('Image loaded successfully:', path);
+      if(adMedia.length > 1){
+        scheduleNextAd();
       }
     }
 
+    // ==================== UI CONTROL FUNCTIONS ====================
+
+    function showLoginForm() {
+      loginWrap.style.display = 'flex';
+      screen.classList.add('hidden');
+      gsap.fromTo(loginWrap, { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.6, ease: "back.out(1.7)" });
+    }
+
+    function hideLoginForm() {
+      loginWrap.style.display = 'none';
+      screen.classList.remove('hidden');
+      gsap.fromTo(screen, { opacity: 0 }, { opacity: 1, duration: 0.8 });
+    }
+
+    // Enhanced login process
+    loginBtn.onclick = async () => {
+      loginError.textContent = '';
+      loginText.style.display = 'none';
+      loginSpinner.classList.remove('hidden');
+      loginBtn.disabled = true;
+      
+      try {
+        const data = await deviceLogin(deviceIdInput.value.trim(), deviceSecretInput.value.trim());
+        device = data.device;
+        
+        if (device.role !== 'screen') {
+          throw new Error('This device is not configured as a screen');
+        }
+        
+        console.log('✅ Login successful for device:', device.deviceId);
+        
+        // Success animation
+        gsap.to(loginWrap, {
+          scale: 1.1,
+          opacity: 0,
+          duration: 0.8,
+          ease: "power2.inOut",
+          onComplete: () => {
+            hideLoginForm();
+            initSocket();
+            loadGameMedia().then(() => {
+              startAdLoop();
+              updateConnectionStatus('connected');
+            });
+          }
+        });
+        
+      } catch (e) {
+        console.error('❌ Login failed:', e);
+        loginError.textContent = e.message;
+        loginText.style.display = 'inline';
+        loginSpinner.classList.add('hidden');
+        loginBtn.disabled = false;
+        
+        // Error shake animation
+        gsap.to(loginError, {
+          x: [-10, 10, -10, 10, 0],
+          duration: 0.5,
+          ease: "power2.inOut"
+        });
+      }
+    };
+
+    // ==================== PRICING SHEET FUNCTIONS ====================
+
     function showPricingSheet(){
       if(!pricingMedia) {
-        console.log('No pricing media available');
+        console.log('⚠️ No pricing media available');
         return;
       }
       
-      console.log('Showing pricing sheet:', pricingMedia.media_url);
+      console.log('💰 Showing pricing sheet:', pricingMedia.media_url);
       currentState = 'pricing';
       clearAdLoop();
       
@@ -738,26 +900,26 @@
         pricingVideo.currentTime = 0;
         
         pricingVideo.onloadedmetadata = () => {
-          console.log('Pricing video metadata loaded - duration:', pricingVideo.duration);
+          console.log('💰 Pricing video metadata loaded - duration:', pricingVideo.duration);
         };
         
         pricingVideo.play().then(() => {
-          console.log('Pricing video playing successfully');
+          console.log('✅ Pricing video playing successfully');
         }).catch((e) => {
-          console.error('Pricing video play failed:', e);
+          console.error('❌ Pricing video play failed:', e);
         });
       } else {
         pricingVideo.pause();
         pricingImage.src = path;
         pricingImage.classList.remove('hidden');
         
-        pricingImage.onerror = () => console.error('Pricing image failed to load:', path);
-        pricingImage.onload = () => console.log('Pricing image loaded successfully:', path);
+        pricingImage.onerror = () => console.error('❌ Pricing image failed to load:', path);
+        pricingImage.onload = () => console.log('✅ Pricing image loaded successfully:', path);
       }
     }
 
     function hidePricingSheet(){
-      console.log('Hiding pricing sheet');
+      console.log('🔒 Hiding pricing sheet');
       currentState = 'idle';
       
       // Smooth transition back to ads
@@ -777,8 +939,10 @@
       transition.play().catch(() => {});
     }
 
+    // ==================== GAME STATE FUNCTIONS ====================
+
     function showGameInProgress(){
-      console.log('Showing game in progress');
+      console.log('🎮 Showing game in progress');
       currentState = 'game';
       clearAdLoop();
       
@@ -803,7 +967,7 @@
     }
 
     function showPrize(prize){
-      console.log('Showing prize:', prize);
+      console.log('🏆 Showing prize:', prize);
       currentState = 'prize';
       clearAdLoop();
       
@@ -813,10 +977,16 @@
       gameOverlay.style.opacity = '0';
       setTimeout(() => gameOverlay.style.display = 'none', 300);
       
-      // Set prize content
-      prizeImg.src = prize.media || '/media/Welcome.mp4';
+      // Set prize content with fallbacks
+      prizeImg.src = prize.media || '/media/default-prize.jpg';
       prizeTitle.textContent = prize.title || 'Amazing Prize!';
       prizeDesc.textContent = prize.description || 'Congratulations on winning this fantastic prize!';
+      
+      // Add error handling for prize image
+      prizeImg.onerror = () => {
+        console.log('⚠️ Prize image failed to load, using fallback');
+        prizeImg.src = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="100%" height="100%" fill="%23ffd700"/><text x="200" y="150" text-anchor="middle" fill="%23333" font-size="48" font-family="Arial">🏆</text></svg>`;
+      };
       
       // Show prize reveal with dramatic animation
       gsap.set(prizeReveal, { display: 'flex', opacity: 0 });
@@ -876,7 +1046,7 @@
     }
 
     function endRound(){
-      console.log('Ending round');
+      console.log('🏁 Ending round');
       currentState = 'idle';
       
       // Smooth transition back to idle state
@@ -893,16 +1063,126 @@
       });
     }
 
+    // ==================== SOCKET CONNECTION FUNCTIONS ====================
+
+    // Enhanced socket connection with better reconnection handling
+    function initSocket(){
+      updateConnectionStatus('connecting');
+      reconnectAttempts = 0;
+      
+      socket = io({ 
+        auth: { token: getToken() },
+        forceNew: true,
+        timeout: 10000,
+        transports: ['websocket', 'polling']
+      });
+      
+      socket.on('connect', () => {
+        console.log('✅ Socket connected');
+        updateConnectionStatus('connected');
+        reconnectAttempts = 0;
+      });
+      
+      socket.on('disconnect', (reason) => {
+        console.log('❌ Socket disconnected:', reason);
+        updateConnectionStatus('disconnected');
+        
+        // Only attempt reconnection if the disconnect wasn't intentional
+        if (reason === 'io server disconnect') {
+          // Server initiated disconnect, try to reconnect after delay
+          setTimeout(() => {
+            if (reconnectAttempts < maxReconnectAttempts) {
+              console.log(`🔄 Attempting to reconnect (${reconnectAttempts + 1}/${maxReconnectAttempts})`);
+              reconnectAttempts++;
+              updateConnectionStatus('reconnecting');
+              socket.connect();
+            } else {
+              updateConnectionStatus('error');
+              console.error('❌ Max reconnection attempts reached');
+            }
+          }, 2000);
+        }
+      });
+      
+      socket.on('connect_error', (error) => {
+        console.error('❌ Socket connection error:', error);
+        reconnectAttempts++;
+        
+        if (reconnectAttempts < maxReconnectAttempts) {
+          updateConnectionStatus('reconnecting');
+          setTimeout(() => {
+            console.log(`🔄 Retrying connection (${reconnectAttempts}/${maxReconnectAttempts})`);
+            socket.connect();
+          }, 3000);
+        } else {
+          updateConnectionStatus('error');
+          console.error('❌ Max reconnection attempts reached');
+        }
+      });
+      
+      // Game event handlers
+      socket.on('game_started', (payload) => {
+        console.log('🎮 Game started:', payload);
+        showGameInProgress();
+      });
+      
+      socket.on('prize_announced', (payload) => {
+        console.log('🏆 Prize announced:', payload);
+        showPrize(payload.prize);
+      });
+      
+      socket.on('round_finished', (payload) => {
+        console.log('🏁 Round finished:', payload);
+        endRound();
+      });
+      
+      socket.on('show_pricing_sheet', () => {
+        console.log('💰 Show pricing sheet requested');
+        showPricingSheet();
+      });
+      
+      socket.on('hide_pricing_sheet', () => {
+        console.log('🔒 Hide pricing sheet requested');
+        hidePricingSheet();
+      });
+    }
+
+    // ==================== DEBUG FUNCTIONS ====================
+
+    function debugMediaState() {
+      console.log('🔍 MEDIA DEBUG STATE:');
+      console.log('Current state:', currentState);
+      console.log('Ad media count:', adMedia?.length || 0);
+      console.log('Current ad index:', adIndex);
+      console.log('Ad area display:', adArea?.style.display);
+      console.log('Ad area opacity:', adArea?.style.opacity);
+      console.log('Ad video hidden:', adVideo?.classList.contains('hidden'));
+      console.log('Ad image hidden:', adImage?.classList.contains('hidden'));
+      console.log('Ad video src:', adVideo?.src);
+      console.log('Ad image src:', adImage?.src);
+      console.log('Pricing media:', pricingMedia ? 'Available' : 'None');
+      console.log('Page visible:', isPageVisible);
+      console.log('Socket connected:', socket?.connected || false);
+      
+      // Check if elements exist in DOM
+      console.log('Elements in DOM:');
+      console.log('- adArea:', !!document.getElementById('adArea'));
+      console.log('- adVideo:', !!document.getElementById('adVideo'));
+      console.log('- adImage:', !!document.getElementById('adImage'));
+    }
+
+    // ==================== AUTO LOGIN FUNCTIONS ====================
+
     // Auto-login with enhanced error handling and user-friendly timing
     async function attemptAutoLogin() {
-      console.log('Attempting auto-login...');
+      console.log('🔑 Attempting auto-login...');
       
       try {
         const token = localStorage.getItem('token');
         const deviceData = localStorage.getItem('device');
         
         if (!token || !deviceData) {
-          console.log('No stored credentials found - showing login form');
+          console.log('ℹ️ No stored credentials found - showing login form');
           return;
         }
         
@@ -910,14 +1190,14 @@
         try {
           parsedDevice = JSON.parse(deviceData);
         } catch (parseError) {
-          console.error('Failed to parse stored device data:', parseError);
+          console.error('❌ Failed to parse stored device data:', parseError);
           localStorage.removeItem('token');
           localStorage.removeItem('device');
           return;
         }
         
         if (!parsedDevice || parsedDevice.role !== 'screen') {
-          console.log('Invalid device role or missing device data');
+          console.log('⚠️ Invalid device role or missing device data');
           return;
         }
         
@@ -932,7 +1212,7 @@
         });
         
         if (!testResponse.ok) {
-          console.log('Stored token is invalid');
+          console.log('⚠️ Stored token is invalid');
           localStorage.removeItem('token');
           localStorage.removeItem('device');
           updateConnectionStatus('error');
@@ -945,7 +1225,7 @@
         loginError.textContent = 'Auto-login successful! Loading screen...';
         loginError.className = 'text-green-300 text-center text-sm min-h-[20px]';
         
-        console.log('Auto-login successful');
+        console.log('✅ Auto-login successful');
         device = parsedDevice;
         
         // Wait a bit longer before transitioning so user can see the success
@@ -966,7 +1246,7 @@
         }, 1500); // Give user time to read the success message
         
       } catch (error) {
-        console.error('Auto-login failed:', error);
+        console.error('❌ Auto-login failed:', error);
         localStorage.removeItem('token');
         localStorage.removeItem('device');
         updateConnectionStatus('error');
@@ -975,9 +1255,19 @@
       }
     }
 
+    // ==================== INITIALIZATION FUNCTIONS ====================
+
     // Enhanced page initialization
     function initializePage() {
-      console.log('Initializing announcement screen...');
+      console.log('🚀 Initializing announcement screen...');
+      
+      // Initialize media system first
+      if (!initializeMediaSystem()) {
+        console.error('❌ Failed to initialize media system');
+        loginError.textContent = 'System initialization failed. Please refresh the page.';
+        loginError.className = 'text-red-300 text-center text-sm min-h-[20px]';
+        return;
+      }
       
       // Show login form with entrance animation
       showLoginForm();
@@ -990,7 +1280,12 @@
           }
         });
       });
+      
+      // Attempt auto-login after a brief delay
+      setTimeout(attemptAutoLogin, 500);
     }
+
+    // ==================== EVENT LISTENERS ====================
 
     // Initialize when DOM is ready
     if (document.readyState === 'loading') {
@@ -1002,7 +1297,7 @@
     // Backup initialization
     window.addEventListener('load', () => {
       if (loginWrap.style.display === 'none' && screen.classList.contains('hidden')) {
-        console.log('Backup initialization triggered');
+        console.log('🔄 Backup initialization triggered');
         showLoginForm();
       }
     });
@@ -1011,8 +1306,16 @@
     function setupMediaErrorHandling() {
       [adVideo, adImage, pricingVideo, pricingImage].forEach(element => {
         element.addEventListener('error', (e) => {
-          console.error('Media error:', e.target.src);
+          console.error('❌ Media error for', element.id, ':', e.target.src);
           // Don't change connection status for media errors
+        });
+        
+        element.addEventListener('loadstart', () => {
+          console.log('📡 Loading started for', element.id);
+        });
+        
+        element.addEventListener('loadeddata', () => {
+          console.log('✅ Data loaded for', element.id);
         });
       });
     }
@@ -1024,45 +1327,145 @@
     document.addEventListener('contextmenu', e => e.preventDefault());
     document.addEventListener('selectstart', e => e.preventDefault());
     
-    // Enhanced visibility change handling - FIXED VERSION
+    // Enhanced visibility change handling
     document.addEventListener('visibilitychange', () => {
       isPageVisible = !document.hidden;
-      console.log('Page visibility changed:', isPageVisible ? 'visible' : 'hidden');
+      console.log('👁️ Page visibility changed:', isPageVisible ? 'visible' : 'hidden');
       
       if (isPageVisible) {
-        console.log('Page became visible - current state:', currentState);
+        console.log('👁️ Page became visible - current state:', currentState);
         
         // Only handle socket reconnection and media resumption
         if (socket && !socket.connected) {
-          console.log('Attempting to reconnect socket...');
+          console.log('🔄 Attempting to reconnect socket...');
           updateConnectionStatus('reconnecting');
           socket.connect();
         }
         
         // Resume video playback if paused (browsers pause videos on hidden tabs)
         if (currentState === 'idle' && !adVideo.classList.contains('hidden') && adVideo.paused) {
-          console.log('Resuming paused video');
+          console.log('▶️ Resuming paused video');
           adVideo.play().catch(e => console.log('Could not resume video:', e));
         }
         
         if (currentState === 'pricing' && !pricingVideo.classList.contains('hidden') && pricingVideo.paused) {
-          console.log('Resuming paused pricing video');
+          console.log('▶️ Resuming paused pricing video');
           pricingVideo.play().catch(e => console.log('Could not resume pricing video:', e));
         }
         
         // DO NOT restart the ad loop - just let it continue where it was
       } else {
-        console.log('Page became hidden');
+        console.log('👁️ Page became hidden');
+      }
+    });
+
+    // Debug shortcut - Press Ctrl+D to debug media state
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.key === 'd') {
+        e.preventDefault();
+        debugMediaState();
+      }
+      
+      // Emergency reload shortcut - Ctrl+R+M
+      if (e.ctrlKey && e.shiftKey && e.key === 'R') {
+        e.preventDefault();
+        console.log('🔄 Emergency media reload triggered');
+        loadGameMedia().then(() => {
+          if (currentState === 'idle') {
+            startAdLoop();
+          }
+        });
       }
     });
 
     // Cleanup on page unload
     window.addEventListener('beforeunload', () => {
+      console.log('🧹 Cleaning up before page unload');
       if (socket) {
         socket.disconnect();
       }
       clearAdLoop();
     });
+
+    // Handle window resize for responsive design
+    window.addEventListener('resize', () => {
+      console.log('📐 Window resized, ensuring media visibility');
+      setTimeout(ensureMediaVisibility, 100);
+    });
+
+    // Global error handler for uncaught errors
+    window.addEventListener('error', (e) => {
+      console.error('🚨 Global error caught:', e.error);
+      if (e.error && e.error.message && e.error.message.includes('media')) {
+        console.log('🎬 Media-related error detected, attempting recovery');
+        // Attempt to recover from media errors
+        setTimeout(() => {
+          if (currentState === 'idle' && adMedia.length > 0) {
+            console.log('🔄 Attempting media recovery');
+            showAdMedia(adMedia[adIndex]);
+          }
+        }, 1000);
+      }
+    });
+
+    // Service worker registration for better caching (optional)
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(registration => {
+            console.log('✅ SW registered:', registration);
+          })
+          .catch(registrationError => {
+            console.log('⚠️ SW registration failed:', registrationError);
+          });
+      });
+    }
+
+    // Periodic health check to ensure media is still working
+    setInterval(() => {
+      if (currentState === 'idle' && adMedia.length > 0) {
+        const currentMediaElement = adVideo.classList.contains('hidden') ? adImage : adVideo;
+        
+        // Check if current media element is actually visible
+        if (!currentMediaElement.classList.contains('hidden')) {
+          const rect = currentMediaElement.getBoundingClientRect();
+          const isVisible = rect.width > 0 && rect.height > 0;
+          
+          if (!isVisible) {
+            console.log('⚠️ Media element not visible, attempting recovery');
+            ensureMediaVisibility();
+            showAdMedia(adMedia[adIndex]);
+          }
+        }
+      }
+    }, 30000); // Check every 30 seconds
+
+    // Console welcome message with debugging info
+    console.log(`
+    ╔═══════════════════════════════════════════╗
+    ║           🎬 ANNOUNCEMENT SCREEN          ║
+    ║                                           ║
+    ║  Debug shortcuts:                         ║
+    ║  • Ctrl+D: Show media debug info         ║
+    ║  • Ctrl+Shift+R: Emergency media reload  ║
+    ║                                           ║
+    ║  Status: Ready for connection             ║
+    ╚═══════════════════════════════════════════╝
+    `);
+
+    // Export functions to global scope for debugging
+    window.debugAnnouncement = {
+      debugMediaState,
+      showAdMedia,
+      loadGameMedia,
+      startAdLoop,
+      resumeAdLoop,
+      ensureMediaVisibility,
+      currentState: () => currentState,
+      adMedia: () => adMedia,
+      device: () => device
+    };
+
   </script>
 </body>
 </html>
