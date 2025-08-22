@@ -656,6 +656,8 @@ async function startServer() {
         console.log('='.repeat(50));
         console.log(`🌐 Server URL: http://localhost:${PORT}`);
         console.log(`⚙️  Admin Panel: http://localhost:${PORT}/admin.html`);
+        console.log(`Operator Page: http://localhost:${PORT}/operator.html`)
+        console.log(`Announcement Page: http://localhost:${PORT}/announcement.html`)
         console.log(`🔑 Admin Secret: ${ADMIN_SECRET}`);
         console.log(`📊 Test Endpoint: http://localhost:${PORT}/api/test`);
         console.log(`🔐 Admin Test: http://localhost:${PORT}/api/admin/test`);
